@@ -136,33 +136,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: soul-app
-          path: app/app/build/outputs/apk/debug/*.apk                  targetCompatibility JavaVersion.VERSION_11
-              }
-              kotlinOptions {
-                  jvmTarget = '11'
-              }
-              buildFeatures {
-                  buildConfig true
-              }
-          }
-          dependencies {
-              implementation 'androidx.core:core-ktx:1.12.0'
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.11.0'
-              implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-          }
-          EOF
-      
-      - name: Make gradlew executable
-        run: chmod +x app/gradlew
-      
-      - name: Build Debug APK
-        run: |
-          cd app
-          ./gradlew assembleDebug --no-daemon
-      
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: soul-app-debug
           path: app/app/build/outputs/apk/debug/*.apk
