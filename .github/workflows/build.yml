@@ -25,7 +25,6 @@ jobs:
       - name: Fix Gradle files
         run: |
           cd app
-          # Create correct settings.gradle
           cat > settings.gradle << 'EOF'
           pluginManagement {
               repositories {
@@ -44,7 +43,6 @@ jobs:
           include(":app")
           EOF
           
-          # Create correct build.gradle
           cat > build.gradle << 'EOF'
           buildscript {
               repositories {
@@ -64,7 +62,6 @@ jobs:
           }
           EOF
           
-          # Remove old build files
           rm -f build.gradle.kts app/build.gradle.kts
       
       - name: Create app/build.gradle
@@ -93,6 +90,9 @@ jobs:
                   release {
                       minifyEnabled false
                   }
+                  debug {
+                      minifyEnabled false
+                  }
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_11
@@ -116,13 +116,13 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x app/gradlew
       
-      - name: Build APK
+      - name: Build Debug APK
         run: |
           cd app
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleDebug --no-daemon
       
-      - name: Upload APK
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: soul-app
-          path: app/app/build/outputs/apk/release/*.apk
+          name: soul-app-debug
+          path: app/app/build/outputs/apk/debug/*.apk
