@@ -64,7 +64,7 @@ jobs:
           
           rm -f build.gradle.kts app/build.gradle.kts
       
-      - name: Create app/build.gradle
+      - name: Create app/build.gradle with dependencies
         run: |
           cd app/app
           cat > build.gradle << 'EOF'
@@ -97,6 +97,46 @@ jobs:
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_11
                   targetCompatibility JavaVersion.VERSION_11
+              }
+              kotlinOptions {
+                  jvmTarget = '11'
+              }
+              buildFeatures {
+                  buildConfig true
+              }
+          }
+          dependencies {
+              implementation 'androidx.core:core-ktx:1.12.0'
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0'
+              implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+              implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
+              implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
+              implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+          }
+          EOF
+      
+      - name: Fix Kotlin code errors
+        run: |
+          cd app
+          # Fix viewModelScope error by adding import
+          find . -name "*.kt" -exec sed -i '1iimport androidx.lifecycle.viewModelScope' {} \;
+          # Fix delay error by wrapping in viewModelScope.launch
+          find . -name "*.kt" -exec sed -i 's/delay(/viewModelScope.launch { delay(/g' {} \;
+      
+      - name: Make gradlew executable
+        run: chmod +x app/gradlew
+      
+      - name: Build APK
+        run: |
+          cd app
+          ./gradlew assembleDebug --no-daemon
+      
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: soul-app
+          path: app/app/build/outputs/apk/debug/*.apk                  targetCompatibility JavaVersion.VERSION_11
               }
               kotlinOptions {
                   jvmTarget = '11'
