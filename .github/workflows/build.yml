@@ -22,14 +22,107 @@ jobs:
       - name: Unzip
         run: unzip apk_payloads.zip -d app
       
-      - name: Build
+      - name: Fix Gradle files
         run: |
           cd app
-          chmod +x gradlew
-          ./gradlew assembleRelease
+          # Create correct settings.gradle
+          cat > settings.gradle << 'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "SoulCrack"
+          include(":app")
+          EOF
+          
+          # Create correct build.gradle
+          cat > build.gradle << 'EOF'
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.1.0'
+                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0'
+              }
+          }
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          EOF
+          
+          # Remove old build files
+          rm -f build.gradle.kts app/build.gradle.kts
       
-      - name: Upload
+      - name: Create app/build.gradle
+        run: |
+          cd app/app
+          cat > build.gradle << 'EOF'
+          plugins {
+              id 'com.android.application'
+              id 'kotlin-android'
+          }
+          android {
+              namespace 'com.soul.crack'
+              compileSdk 34
+              defaultConfig {
+                  applicationId 'com.soul.crack'
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName '4.2.0'
+                  buildConfigField 'String', 'BASE_URL', '"https://soul-panel.onrender.com"'
+                  buildConfigField 'String', 'HMAC_SECRET', '"295af957aad5514dd9772cd30ebe75391fd90401939e653a0e3f2fe3a2f28065"'
+                  buildConfigField 'String', 'E2E_KEY_V1', '"QtF8YDVUD0qo9vZKcoFSSvRFBCu/8K3T/PIyhgv9II="'
+                  buildConfigField 'Boolean', 'DISABLE_TAMPER_CHECK', 'true'
+              }
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_11
+                  targetCompatibility JavaVersion.VERSION_11
+              }
+              kotlinOptions {
+                  jvmTarget = '11'
+              }
+              buildFeatures {
+                  buildConfig true
+              }
+          }
+          dependencies {
+              implementation 'androidx.core:core-ktx:1.12.0'
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0'
+              implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+          }
+          EOF
+      
+      - name: Make gradlew executable
+        run: chmod +x app/gradlew
+      
+      - name: Build APK
+        run: |
+          cd app
+          ./gradlew assembleRelease --no-daemon
+      
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app
+          name: soul-app
           path: app/app/build/outputs/apk/release/*.apk
